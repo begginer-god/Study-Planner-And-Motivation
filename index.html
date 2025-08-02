@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>4.00 Journey - Study Planner & Motivation Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "custom-blue": "#3B82F6",
+              "custom-green": "#10B981",
+              "custom-red": "#EF4444",
+              "custom-purple": "#8B5CF6",
+              "custom-orange": "#F59E0B",
+            },
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.3s ease-out",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .text-gradient {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .study-session-completed {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+      }
+
+      .study-session-pending {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+      }
+
+      .study-session-upcoming {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+      }
+
+      body.light-theme {
+        background: linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%);
+        color: #1f2937; /* softer dark blue-gray */
+      }
+
+      body.light-theme .glass-effect {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      }
+
+      body.light-theme .gradient-bg {
+        background: linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%);
+      }
+
+      body.light-theme .text-white {
+        color: #1f2937 !important;
+      }
+
+      body.light-theme .text-gray-200,
+      body.light-theme .text-gray-300 {
+        color: #374151 !important;
+      }
+
+      body.light-theme .study-session-completed {
+        background: linear-gradient(135deg, #d1fae5, #6ee7b7);
+        color: #065f46;
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      body.light-theme .study-session-pending {
+        background: linear-gradient(135deg, #fecaca, #f87171);
+        color: #7f1d1d;
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      body.light-theme .study-session-upcoming {
+        background: linear-gradient(135deg, #fef08a, #facc15);
+        color: #92400e;
+        box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen gradient-bg">
+    <!-- Header -->
+    <header class="glass-effect shadow-lg">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white font-bold text-lg">4.0</span>
+            </div>
+            <div>
+              <h1 class="text-white text-xl font-bold">4.00 Journey</h1>
+              <p class="text-gray-200 text-sm">Your Path to Excellence</p>
+            </div>
+          </div>
+          <div class="text-white text-right flex items-center space-x-3">
+            <div>
+              <p class="text-sm" id="currentDate"></p>
+              <p class="text-xs text-gray-200" id="currentTime"></p>
+            </div>
+            <!-- Theme Toggle Button -->
+            <button
+              id="themeToggleBtn"
+              onclick="toggleTheme()"
+              class="ml-4 bg-white/20 hover:bg-white/30 text-yellow-300 dark:text-gray-800 px-3 py-2 rounded-full transition-all"
+              title="Toggle Light/Dark Theme"
+            >
+              <span id="themeIcon">🌙</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-6 space-y-6">
+      <!-- Daily Motivation Section -->
+      <div class="glass-effect rounded-2xl p-6 animate-fade-in">
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold text-white mb-2">
+            🔆 Daily Motivation
+          </h2>
+          <p class="text-blue-300 font-semibold animate-pulse-slow">
+            🔥 You are on your 4.00 Journey!
+          </p>
+        </div>
+
+        <!-- Motivation Mode Selector -->
+        <div class="flex flex-wrap justify-center gap-2 mb-4">
+          <button
+            onclick="setMotivationMode('bhakti')"
+            class="mode-btn bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-all"
+          >
+            🕉️ Bhakti Mode
+          </button>
+          <button
+            onclick="setMotivationMode('warrior')"
+            class="mode-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-all"
+          >
+            ⚔️ Warrior Mode
+          </button>
+          <button
+            onclick="setMotivationMode('peace')"
+            class="mode-btn bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-all"
+          >
+            🧘 Peace Mode
+          </button>
+        </div>
+
+        <!-- Quote Display -->
+        <div class="bg-white/10 rounded-xl p-6 mb-4">
+          <div class="text-center">
+            <p class="text-white text-lg font-medium mb-2" id="motivationQuote">
+              Loading inspiration...
+            </p>
+            <p class="text-gray-300 text-sm" id="quoteAuthor"></p>
+          </div>
+        </div>
+
+        <!-- Quote Controls -->
+        <div class="flex justify-center space-x-4">
+          <button
+            onclick="generateNewQuote()"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+          >
+            🔄 New Quote
+          </button>
+          <button
+            onclick="saveQuote()"
+            class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+          >
+            💾 Save This
+          </button>
+        </div>
+      </div>
+
+      <!-- Study Planner Section -->
+      <div class="glass-effect rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-white">📚 Today's Study Plan</h2>
+          <button
+            onclick="openAddSessionModal()"
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+          >
+            ➕ Add Session
+          </button>
+        </div>
+
+        <!-- Study Sessions List -->
+        <div id="studySessionsList" class="space-y-3">
+          <!-- Sessions will be dynamically loaded here -->
+        </div>
+
+        <!-- Study Stats -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-green-500/20 rounded-lg p-4 text-center">
+            <p class="text-green-300 text-sm">Completed</p>
+            <p class="text-white text-2xl font-bold" id="completedCount">0</p>
+          </div>
+          <div class="bg-red-500/20 rounded-lg p-4 text-center">
+            <p class="text-red-300 text-sm">Pending</p>
+            <p class="text-white text-2xl font-bold" id="pendingCount">0</p>
+          </div>
+          <div class="bg-blue-500/20 rounded-lg p-4 text-center">
+            <p class="text-blue-300 text-sm">Total Hours</p>
+            <p class="text-white text-2xl font-bold" id="totalHours">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Quotes Section -->
+      <div class="glass-effect rounded-2xl p-6">
+        <h2 class="text-2xl font-bold text-white mb-4">
+          💫 My Favorite Quotes
+        </h2>
+        <div id="savedQuotesList" class="space-y-2 max-h-60 overflow-y-auto">
+          <!-- Saved quotes will appear here -->
+        </div>
+      </div>
+
+      <!-- Study Timer Section -->
+      <div class="glass-effect rounded-2xl p-6">
+        <h2 class="text-2xl font-bold text-white mb-4">⏱️ Study Timer</h2>
+
+        <!-- Timer Display -->
+        <div class="text-center mb-6">
+          <div class="relative inline-block">
+            <div
+              class="w-48 h-48 mx-auto bg-white/10 rounded-full flex items-center justify-center border-4 border-white/20 relative overflow-hidden"
+            >
+              <!-- Progress Ring -->
+              <svg
+                class="absolute inset-0 w-full h-full transform -rotate-90"
+                viewBox="0 0 100 100"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.1)"
+                  stroke-width="2"
+                />
+                <circle
+                  id="progressRing"
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="#10B981"
+                  stroke-width="3"
+                  stroke-dasharray="283"
+                  stroke-dashoffset="283"
+                  class="transition-all duration-1000"
+                />
+              </svg>
+
+              <!-- Timer Display -->
+              <div class="text-center z-10">
+                <div class="text-4xl font-bold text-white" id="timerDisplay">
+                  25:00
+                </div>
+                <div class="text-sm text-gray-300" id="timerMode">
+                  Focus Time
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timer Controls -->
+        <div class="flex justify-center space-x-3 mb-4">
+          <button
+            onclick="startTimer()"
+            id="startBtn"
+            class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+          >
+            ▶️ Start
+          </button>
+          <button
+            onclick="pauseTimer()"
+            id="pauseBtn"
+            class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105 hidden"
+          >
+            ⏸️ Pause
+          </button>
+          <button
+            onclick="resetTimer()"
+            class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+          >
+            🔄 Reset
+          </button>
+        </div>
+
+        <!-- Timer Presets -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <button
+            onclick="setTimer(25, 'Focus Time')"
+            class="bg-blue-500/20 hover:bg-blue-500/30 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all"
+          >
+            🍅 Pomodoro<br /><span class="text-xs">25 min</span>
+          </button>
+          <button
+            onclick="setTimer(5, 'Short Break')"
+            class="bg-green-500/20 hover:bg-green-500/30 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all"
+          >
+            ☕ Short Break<br /><span class="text-xs">5 min</span>
+          </button>
+          <button
+            onclick="setTimer(15, 'Long Break')"
+            class="bg-purple-500/20 hover:bg-purple-500/30 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all"
+          >
+            🛋️ Long Break<br /><span class="text-xs">15 min</span>
+          </button>
+          <button
+            onclick="setTimer(45, 'Deep Focus')"
+            class="bg-orange-500/20 hover:bg-orange-500/30 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all"
+          >
+            🧠 Deep Focus<br /><span class="text-xs">45 min</span>
+          </button>
+        </div>
+
+        <!-- Custom Timer -->
+        <div class="bg-white/10 rounded-lg p-4">
+          <div class="flex items-center space-x-4">
+            <label class="text-white text-sm font-medium">Custom:</label>
+            <input
+              type="number"
+              id="customMinutes"
+              min="1"
+              max="180"
+              value="25"
+              class="w-20 bg-white/10 border border-white/20 rounded px-3 py-1 text-white text-center"
+            />
+            <span class="text-white text-sm">minutes</span>
+            <button
+              onclick="setCustomTimer()"
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded text-sm font-medium transition-all"
+            >
+              Set Timer
+            </button>
+          </div>
+        </div>
+
+        <!-- Timer Stats -->
+        <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+          <div class="bg-green-500/20 rounded-lg p-3">
+            <p class="text-green-300 text-xs">Completed Sessions</p>
+            <p class="text-white text-lg font-bold" id="completedSessions">0</p>
+          </div>
+          <div class="bg-blue-500/20 rounded-lg p-3">
+            <p class="text-blue-300 text-xs">Focus Time Today</p>
+            <p class="text-white text-lg font-bold" id="focusTimeToday">0h</p>
+          </div>
+          <div class="bg-purple-500/20 rounded-lg p-3">
+            <p class="text-purple-300 text-xs">Current Streak</p>
+            <p class="text-white text-lg font-bold" id="currentStreak">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reminders Section -->
+      <div class="glass-effect rounded-2xl p-6">
+        <h2 class="text-2xl font-bold text-white mb-4">⏰ Daily Reminders</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-yellow-500/20 rounded-lg p-4">
+            <div class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="tiffinReminder"
+                class="w-4 h-4 text-yellow-500"
+              />
+              <label for="tiffinReminder" class="text-white"
+                >🍽️ Tiffin Time & Nap</label
+              >
+            </div>
+          </div>
+          <div class="bg-purple-500/20 rounded-lg p-4">
+            <div class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="bedtimeReminder"
+                class="w-4 h-4 text-purple-500"
+              />
+              <label for="bedtimeReminder" class="text-white"
+                >🌙 Pre-bed Wind-down</label
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Session Modal -->
+    <div
+      id="addSessionModal"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50"
+    >
+      <div class="glass-effect rounded-2xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-white">Add Study Session</h3>
+          <button
+            onclick="closeAddSessionModal()"
+            class="text-white hover:text-red-300 text-2xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form id="addSessionForm" class="space-y-4">
+          <div>
+            <label class="block text-white text-sm font-medium mb-2"
+              >Subject/Topic</label
+            >
+            <input
+              type="text"
+              id="sessionSubject"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-300"
+              placeholder="e.g., Physics Revision"
+              required
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-white text-sm font-medium mb-2"
+                >Start Time</label
+              >
+              <input
+                type="time"
+                id="sessionStartTime"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-white text-sm font-medium mb-2"
+                >End Time</label
+              >
+              <input
+                type="time"
+                id="sessionEndTime"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="flex space-x-4">
+            <button
+              type="submit"
+              class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium transition-all"
+            >
+              Add Session
+            </button>
+            <button
+              type="button"
+              onclick="closeAddSessionModal()"
+              class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Data Storage using localStorage
+      class StudyPlannerApp {
+        constructor() {
+          this.currentMode = "warrior";
+          this.studySessions =
+            JSON.parse(localStorage.getItem("studySessions")) || [];
+          this.savedQuotes =
+            JSON.parse(localStorage.getItem("savedQuotes")) || [];
+
+          // Timer properties
+          this.timerInterval = null;
+          this.isRunning = false;
+          this.timeLeft = 25 * 60; // 25 minutes in seconds
+          this.totalTime = 25 * 60;
+          this.currentTimerMode = "Focus Time";
+          this.timerStats = JSON.parse(localStorage.getItem("timerStats")) || {
+            completedSessions: 0,
+            focusTimeToday: 0,
+            currentStreak: 0,
+            lastDate: new Date().toDateString(),
+          };
+
+          this.quotes = {
+            bhakti: [
+              {
+                text: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन",
+                author: "Bhagavad Gita 2.47",
+              },
+              { text: "योगस्थः कुरु कर्माणि", author: "Bhagavad Gita 2.48" },
+              {
+                text: "श्रद्धावान् लभते ज्ञानम्",
+                author: "Bhagavad Gita 4.39",
+              },
+              {
+                text: "मन एव मनुष्याणां कारणं बन्धमोक्षयोः",
+                author: "Ancient Wisdom",
+              },
+              { text: "तत्त्वमसि - You are That", author: "Upanishads" },
+            ],
+            warrior: [
+              {
+                text: "Success is not about motivation, it's about consistency.",
+                author: "Anonymous",
+              },
+              {
+                text: "Discipline is choosing between what you want now and what you want most.",
+                author: "Abraham Lincoln",
+              },
+              {
+                text: "The pain of discipline weighs ounces, but the pain of regret weighs tons.",
+                author: "Jim Rohn",
+              },
+              {
+                text: "Champions don't become champions in the ring. They become champions in training.",
+                author: "Muhammad Ali",
+              },
+              {
+                text: "Your 4.00 journey begins with a single step of discipline.",
+                author: "Study Warrior",
+              },
+            ],
+            peace: [
+              {
+                text: "Peace comes from within. Do not seek it without.",
+                author: "Buddha",
+              },
+              {
+                text: "In the midst of winter, I found there was, within me, an invincible summer.",
+                author: "Albert Camus",
+              },
+              {
+                text: "Breathe in peace, breathe out stress.",
+                author: "Mindfulness Practice",
+              },
+              {
+                text: "Be present in all things and thankful for all things.",
+                author: "Maya Angelou",
+              },
+              {
+                text: "Stillness is where creativity and solutions are found.",
+                author: "Eckhart Tolle",
+              },
+            ],
+          };
+
+          this.init();
+        }
+
+        init() {
+          this.updateDateTime();
+          this.generateNewQuote();
+          this.loadStudySessions();
+          this.loadSavedQuotes();
+          this.setupEventListeners();
+          this.updateTimerDisplay();
+          this.loadTimerStats();
+          this.checkDateReset();
+
+          // Update time every minute
+          setInterval(() => this.updateDateTime(), 60000);
+        }
+
+        updateDateTime() {
+          const now = new Date();
+          const dateOptions = {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
+          const timeOptions = {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          };
+
+          document.getElementById("currentDate").textContent =
+            now.toLocaleDateString("en-US", dateOptions);
+          document.getElementById("currentTime").textContent =
+            now.toLocaleTimeString("en-US", timeOptions);
+        }
+
+        setMotivationMode(mode) {
+          this.currentMode = mode;
+          // Update active button styling
+          document.querySelectorAll(".mode-btn").forEach((btn) => {
+            btn.classList.remove("ring-2", "ring-white");
+          });
+          event.target.classList.add("ring-2", "ring-white");
+          this.generateNewQuote();
+        }
+
+        generateNewQuote() {
+          const quotes = this.quotes[this.currentMode];
+          const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+          document.getElementById("motivationQuote").textContent =
+            randomQuote.text;
+          document.getElementById(
+            "quoteAuthor"
+          ).textContent = `— ${randomQuote.author}`;
+
+          // Add animation
+          const quoteElement =
+            document.getElementById("motivationQuote").parentElement;
+          quoteElement.classList.add("animate-slide-up");
+          setTimeout(
+            () => quoteElement.classList.remove("animate-slide-up"),
+            300
+          );
+        }
+
+        saveQuote() {
+          const quoteText =
+            document.getElementById("motivationQuote").textContent;
+          const quoteAuthor =
+            document.getElementById("quoteAuthor").textContent;
+
+          const quote = {
+            text: quoteText,
+            author: quoteAuthor,
+            mode: this.currentMode,
+            timestamp: new Date().toISOString(),
+          };
+
+          // Check if quote already exists
+          const exists = this.savedQuotes.some((q) => q.text === quoteText);
+          if (!exists) {
+            this.savedQuotes.unshift(quote);
+            localStorage.setItem(
+              "savedQuotes",
+              JSON.stringify(this.savedQuotes)
+            );
+            this.loadSavedQuotes();
+            this.showNotification("Quote saved successfully! 💫");
+          } else {
+            this.showNotification("Quote already saved! 📌");
+          }
+        }
+
+        addStudySession(subject, startTime, endTime) {
+          const session = {
+            id: Date.now(),
+            subject,
+            startTime,
+            endTime,
+            duration: this.calculateDuration(startTime, endTime),
+            completed: false,
+            timestamp: new Date().toISOString(),
+          };
+
+          this.studySessions.push(session);
+          this.studySessions.sort((a, b) =>
+            a.startTime.localeCompare(b.startTime)
+          );
+          localStorage.setItem(
+            "studySessions",
+            JSON.stringify(this.studySessions)
+          );
+          this.loadStudySessions();
+        }
+
+        toggleSessionCompletion(sessionId) {
+          const session = this.studySessions.find((s) => s.id === sessionId);
+          if (session) {
+            session.completed = !session.completed;
+            localStorage.setItem(
+              "studySessions",
+              JSON.stringify(this.studySessions)
+            );
+            this.loadStudySessions();
+          }
+        }
+
+        deleteStudySession(sessionId) {
+          this.studySessions = this.studySessions.filter(
+            (s) => s.id !== sessionId
+          );
+          localStorage.setItem(
+            "studySessions",
+            JSON.stringify(this.studySessions)
+          );
+          this.loadStudySessions();
+        }
+
+        calculateDuration(startTime, endTime) {
+          const start = new Date(`2000-01-01T${startTime}`);
+          const end = new Date(`2000-01-01T${endTime}`);
+          let diff = (end - start) / (1000 * 60); // minutes
+
+          if (diff < 0) {
+            diff += 24 * 60; // Add 24 hours if end time is next day
+          }
+
+          const hours = Math.floor(diff / 60);
+          const minutes = diff % 60;
+
+          return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        }
+
+        getCurrentTimeStatus(startTime, endTime) {
+          const now = new Date();
+          const currentTime =
+            now.getHours().toString().padStart(2, "0") +
+            ":" +
+            now.getMinutes().toString().padStart(2, "0");
+
+          if (currentTime < startTime) {
+            return "upcoming";
+          } else if (currentTime >= startTime && currentTime <= endTime) {
+            return "current";
+          } else {
+            return "past";
+          }
+        }
+
+        loadStudySessions() {
+          const container = document.getElementById("studySessionsList");
+
+          if (this.studySessions.length === 0) {
+            container.innerHTML = `
+                        <div class="text-center py-8 text-gray-300">
+                            <p class="text-lg">📝 No study sessions planned yet</p>
+                            <p class="text-sm">Click "Add Session" to get started!</p>
+                        </div>
+                    `;
+            this.updateStats();
+            return;
+          }
+
+          container.innerHTML = this.studySessions
+            .map((session) => {
+              const timeStatus = this.getCurrentTimeStatus(
+                session.startTime,
+                session.endTime
+              );
+              let statusClass = "";
+              let statusIcon = "";
+
+              if (session.completed) {
+                statusClass = "study-session-completed";
+                statusIcon = "✅";
+              } else if (timeStatus === "current") {
+                statusClass = "study-session-upcoming";
+                statusIcon = "⏰";
+              } else {
+                statusClass = "study-session-pending";
+                statusIcon = "📚";
+              }
+
+              return `
+                        <div class="flex items-center justify-between p-4 rounded-lg ${statusClass} animate-fade-in">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" ${
+                                  session.completed ? "checked" : ""
+                                } 
+                                       onchange="app.toggleSessionCompletion(${
+                                         session.id
+                                       })"
+                                       class="w-5 h-5 text-green-500 rounded">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-lg">${statusIcon}</span>
+                                        <span class="font-medium">${
+                                          session.startTime
+                                        } – ${session.endTime}</span>
+                                        <span class="text-sm opacity-75">(${
+                                          session.duration
+                                        })</span>
+                                    </div>
+                                    <p class="text-sm opacity-90">${
+                                      session.subject
+                                    }</p>
+                                </div>
+                            </div>
+                            <button onclick="app.deleteStudySession(${
+                              session.id
+                            })" 
+                                    class="text-white/70 hover:text-red-300 transition-colors">
+                                🗑️
+                            </button>
+                        </div>
+                    `;
+            })
+            .join("");
+
+          this.updateStats();
+        }
+
+        updateStats() {
+          const completed = this.studySessions.filter(
+            (s) => s.completed
+          ).length;
+          const pending = this.studySessions.filter((s) => !s.completed).length;
+          const totalMinutes = this.studySessions.reduce((total, session) => {
+            const duration = session.duration;
+            const hours = parseInt(
+              duration.match(/(\d+)h/) ? duration.match(/(\d+)h/)[1] : 0
+            );
+            const minutes = parseInt(
+              duration.match(/(\d+)m/) ? duration.match(/(\d+)m/)[1] : 0
+            );
+            return total + hours * 60 + minutes;
+          }, 0);
+
+          const totalHours = (totalMinutes / 60).toFixed(1);
+
+          document.getElementById("completedCount").textContent = completed;
+          document.getElementById("pendingCount").textContent = pending;
+          document.getElementById("totalHours").textContent = totalHours;
+        }
+
+        loadSavedQuotes() {
+          const container = document.getElementById("savedQuotesList");
+
+          if (this.savedQuotes.length === 0) {
+            container.innerHTML =
+              '<p class="text-gray-300 text-center py-4">No saved quotes yet. Save your favorites! ⭐</p>';
+            return;
+          }
+
+          container.innerHTML = this.savedQuotes
+            .map(
+              (quote, index) => `
+                    <div class="bg-white/10 rounded-lg p-3 flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-white text-sm">"${quote.text}"</p>
+                            <p class="text-gray-300 text-xs mt-1">${quote.author}</p>
+                        </div>
+                        <button onclick="app.deleteSavedQuote(${index})" class="text-red-400 hover:text-red-300 ml-2">
+                            ✕
+                        </button>
+                    </div>
+                `
+            )
+            .join("");
+        }
+
+        deleteSavedQuote(index) {
+          this.savedQuotes.splice(index, 1);
+          localStorage.setItem("savedQuotes", JSON.stringify(this.savedQuotes));
+          this.loadSavedQuotes();
+        }
+
+        setupEventListeners() {
+          // Add Session Form
+          document
+            .getElementById("addSessionForm")
+            .addEventListener("submit", (e) => {
+              e.preventDefault();
+
+              const subject = document.getElementById("sessionSubject").value;
+              const startTime =
+                document.getElementById("sessionStartTime").value;
+              const endTime = document.getElementById("sessionEndTime").value;
+
+              if (startTime >= endTime) {
+                this.showNotification(
+                  "End time must be after start time! ⏰",
+                  "error"
+                );
+                return;
+              }
+
+              this.addStudySession(subject, startTime, endTime);
+              this.closeAddSessionModal();
+              this.showNotification("Study session added successfully! 📚");
+            });
+        }
+
+        openAddSessionModal() {
+          document.getElementById("addSessionModal").classList.remove("hidden");
+          document.getElementById("addSessionModal").classList.add("flex");
+          document.getElementById("sessionSubject").focus();
+        }
+
+        closeAddSessionModal() {
+          document.getElementById("addSessionModal").classList.add("hidden");
+          document.getElementById("addSessionModal").classList.remove("flex");
+          document.getElementById("addSessionForm").reset();
+        }
+
+        showNotification(message, type = "success") {
+          // Create notification element
+          const notification = document.createElement("div");
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+            type === "success" ? "bg-green-500" : "bg-red-500"
+          } text-white font-medium`;
+          notification.textContent = message;
+
+          document.body.appendChild(notification);
+
+          // Show notification
+          setTimeout(() => notification.classList.add("translate-x-0"), 100);
+
+          // Hide notification
+          setTimeout(() => {
+            notification.classList.add("translate-x-full");
+            setTimeout(() => document.body.removeChild(notification), 300);
+          }, 3000);
+        }
+
+        // Timer Methods
+        startTimer() {
+          if (!this.isRunning) {
+            this.isRunning = true;
+            document.getElementById("startBtn").classList.add("hidden");
+            document.getElementById("pauseBtn").classList.remove("hidden");
+
+            this.timerInterval = setInterval(() => {
+              this.timeLeft--;
+              this.updateTimerDisplay();
+              this.updateProgressRing();
+
+              if (this.timeLeft <= 0) {
+                this.timerComplete();
+              }
+            }, 1000);
+          }
+        }
+
+        pauseTimer() {
+          if (this.isRunning) {
+            this.isRunning = false;
+            clearInterval(this.timerInterval);
+            document.getElementById("startBtn").classList.remove("hidden");
+            document.getElementById("pauseBtn").classList.add("hidden");
+          }
+        }
+
+        resetTimer() {
+          this.isRunning = false;
+          clearInterval(this.timerInterval);
+          this.timeLeft = this.totalTime;
+          this.updateTimerDisplay();
+          this.updateProgressRing();
+          document.getElementById("startBtn").classList.remove("hidden");
+          document.getElementById("pauseBtn").classList.add("hidden");
+        }
+
+        setTimer(minutes, mode) {
+          this.pauseTimer();
+          this.totalTime = minutes * 60;
+          this.timeLeft = this.totalTime;
+          this.currentTimerMode = mode;
+          this.updateTimerDisplay();
+          this.updateProgressRing();
+        }
+
+        setCustomTimer() {
+          const minutes = parseInt(
+            document.getElementById("customMinutes").value
+          );
+          if (minutes > 0 && minutes <= 180) {
+            this.setTimer(minutes, "Custom Timer");
+            this.showNotification(`Timer set for ${minutes} minutes! ⏱️`);
+          } else {
+            this.showNotification(
+              "Please enter a valid time (1-180 minutes)! ⚠️",
+              "error"
+            );
+          }
+        }
+
+        updateTimerDisplay() {
+          const minutes = Math.floor(this.timeLeft / 60);
+          const seconds = this.timeLeft % 60;
+          const display = `${minutes.toString().padStart(2, "0")}:${seconds
+            .toString()
+            .padStart(2, "0")}`;
+
+          document.getElementById("timerDisplay").textContent = display;
+          document.getElementById("timerMode").textContent =
+            this.currentTimerMode;
+
+          // Update page title with timer
+          if (this.isRunning) {
+            document.title = `${display} - ${this.currentTimerMode} | 4.00 Journey`;
+          } else {
+            document.title =
+              "4.00 Journey - Study Planner & Motivation Tracker";
+          }
+        }
+
+        updateProgressRing() {
+          const progress = (this.totalTime - this.timeLeft) / this.totalTime;
+          const circumference = 2 * Math.PI * 45; // radius = 45
+          const offset = circumference - progress * circumference;
+
+          const ring = document.getElementById("progressRing");
+          ring.style.strokeDashoffset = offset;
+
+          // Change color based on time remaining
+          if (this.timeLeft <= 60) {
+            // Last minute
+            ring.style.stroke = "#EF4444"; // Red
+          } else if (this.timeLeft <= 300) {
+            // Last 5 minutes
+            ring.style.stroke = "#F59E0B"; // Orange
+          } else {
+            ring.style.stroke = "#10B981"; // Green
+          }
+        }
+
+        timerComplete() {
+          this.pauseTimer();
+          this.updateTimerStats();
+          this.playNotificationSound();
+
+          // Show completion notification
+          if (
+            this.currentTimerMode.includes("Focus") ||
+            this.currentTimerMode.includes("Pomodoro")
+          ) {
+            this.showNotification(
+              "🎉 Focus session completed! Time for a break!"
+            );
+          } else {
+            this.showNotification("✨ Break time over! Ready to focus again?");
+          }
+
+          // Auto-suggest next timer
+          this.suggestNextTimer();
+        }
+
+        updateTimerStats() {
+          const today = new Date().toDateString();
+
+          if (this.timerStats.lastDate !== today) {
+            // Reset daily stats for new day
+            this.timerStats.focusTimeToday = 0;
+            this.timerStats.lastDate = today;
+          }
+
+          if (
+            this.currentTimerMode.includes("Focus") ||
+            this.currentTimerMode.includes("Pomodoro") ||
+            this.currentTimerMode === "Deep Focus"
+          ) {
+            this.timerStats.completedSessions++;
+            this.timerStats.focusTimeToday += Math.floor(this.totalTime / 60);
+            this.timerStats.currentStreak++;
+          } else {
+            // Don't break streak for break timers
+          }
+
+          localStorage.setItem("timerStats", JSON.stringify(this.timerStats));
+          this.loadTimerStats();
+        }
+
+        loadTimerStats() {
+          document.getElementById("completedSessions").textContent =
+            this.timerStats.completedSessions;
+          document.getElementById(
+            "focusTimeToday"
+          ).textContent = `${this.timerStats.focusTimeToday}h`;
+          document.getElementById("currentStreak").textContent =
+            this.timerStats.currentStreak;
+        }
+
+        checkDateReset() {
+          const today = new Date().toDateString();
+          if (this.timerStats.lastDate !== today) {
+            this.timerStats.focusTimeToday = 0;
+            this.timerStats.lastDate = today;
+            localStorage.setItem("timerStats", JSON.stringify(this.timerStats));
+            this.loadTimerStats();
+          }
+        }
+
+        suggestNextTimer() {
+          setTimeout(() => {
+            if (
+              this.currentTimerMode.includes("Focus") ||
+              this.currentTimerMode.includes("Pomodoro")
+            ) {
+              // Suggest break after focus
+              if (this.timerStats.completedSessions % 4 === 0) {
+                this.setTimer(15, "Long Break");
+                this.showNotification("Long break time! You've earned it! 🛋️");
+              } else {
+                this.setTimer(5, "Short Break");
+                this.showNotification("Take a short break! ☕");
+              }
+            } else {
+              // Suggest focus after break
+              this.setTimer(25, "Focus time");
+              this.showNotification("Ready to focus again? 🍅");
+            }
+          }, 2000);
+        }
+
+        playNotificationSound() {
+          // Create audio context for notification sound
+          try {
+            const audioContext = new (window.AudioContext ||
+              window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(
+              0.01,
+              audioContext.currentTime + 0.5
+            );
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+          } catch (e) {
+            // Fallback for browsers that don't support Web Audio API
+            console.log("Timer completed!");
+          }
+        }
+      }
+
+      // Global functions for HTML onclick events
+      function setMotivationMode(mode) {
+        app.setMotivationMode(mode);
+      }
+
+      function generateNewQuote() {
+        app.generateNewQuote();
+      }
+
+      function saveQuote() {
+        app.saveQuote();
+      }
+
+      function openAddSessionModal() {
+        app.openAddSessionModal();
+      }
+
+      function closeAddSessionModal() {
+        app.closeAddSessionModal();
+      }
+
+      // Timer global functions
+      function startTimer() {
+        app.startTimer();
+      }
+
+      function pauseTimer() {
+        app.pauseTimer();
+      }
+
+      function resetTimer() {
+        app.resetTimer();
+      }
+
+      function setTimer(minutes, mode) {
+        app.setTimer(minutes, mode);
+      }
+
+      function setCustomTimer() {
+        app.setCustomTimer();
+      }
+
+      function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById("themeIcon");
+        if (body.classList.contains("light-theme")) {
+          body.classList.remove("light-theme");
+          localStorage.setItem("theme", "dark");
+          icon.textContent = "🌙";
+        } else {
+          body.classList.add("light-theme");
+          localStorage.setItem("theme", "light");
+          icon.textContent = "☀️";
+        }
+      }
+
+      // On load, set theme from localStorage
+      document.addEventListener("DOMContentLoaded", function () {
+        const savedTheme = localStorage.getItem("theme");
+        const icon = document.getElementById("themeIcon");
+        if (savedTheme === "light") {
+          document.body.classList.add("light-theme");
+          if (icon) icon.textContent = "☀️";
+        } else {
+          document.body.classList.remove("light-theme");
+          if (icon) icon.textContent = "🌙";
+        }
+        // Initialize default mode styling
+        const warriorBtn = document.querySelector(
+          "[onclick=\"setMotivationMode('warrior')\"]"
+        );
+        if (warriorBtn) {
+          warriorBtn.classList.add("ring-2", "ring-white");
+        }
+      });
+
+      // Initialize app
+      const app = new StudyPlannerApp();
+    </script>
+  </body>
+</html>
