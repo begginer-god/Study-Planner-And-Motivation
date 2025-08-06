@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>4.00 Journey - Study Planner & Motivation Tracker</title>
+    <!-- ...existing code... -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- ...existing code... -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -49,13 +52,13 @@
       }
 
       .glass-effect {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(230, 230, 255, 0.1);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
 
       .gradient-bg {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(235deg, #425ac2 0%, #351a50 100%);
       }
 
       .text-gradient {
@@ -81,12 +84,12 @@
       }
 
       body.light-theme {
-        background: linear-gradient(135deg, #e0e7ff 0%, #fef3c7 100%);
+        background: linear-gradient(135deg, #839b8c 0%, #fef3c7 100%);
         color: #1f2937; /* softer dark blue-gray */
       }
 
       body.light-theme .glass-effect {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(226, 233, 167, 0.8);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(0, 0, 0, 0.08);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
@@ -112,15 +115,32 @@
       }
 
       body.light-theme .study-session-pending {
-        background: linear-gradient(135deg, #fecaca, #f87171);
-        color: #7f1d1d;
+        background: linear-gradient(135deg, #961111, #791717);
+        color: #580606;
         box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
       }
 
       body.light-theme .study-session-upcoming {
         background: linear-gradient(135deg, #fef08a, #facc15);
-        color: #92400e;
+        color: #692e09;
         box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Status Report Styles */
+      .status-excellent {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+      .status-good {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      }
+      .status-average {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+      .status-poor {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+      }
+      .status-critical {
+        background: linear-gradient(135deg, #7c2d12, #451a03);
       }
     </style>
   </head>
@@ -160,6 +180,42 @@
     </header>
 
     <div class="container mx-auto px-4 py-6 space-y-6">
+      <!-- Daily Work Status Section -->
+      <div class="glass-effect rounded-2xl p-6 animate-fade-in">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-white">📊 Daily Work Status</h2>
+          <div class="flex gap-2">
+            <button
+              onclick="openStatusModal()"
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+            >
+              📝 Update Status
+            </button>
+            <button
+              onclick="downloadStatusExcel()"
+              class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+              title="Download all status as Excel"
+            >
+              ⬇️ Download Excel
+            </button>
+          </div>
+        </div>
+
+        <!-- Today's Status Display -->
+        <div id="todayStatusDisplay" class="mb-6">
+          <!-- Will be populated by JavaScript -->
+        </div>
+
+        <!-- Status History -->
+        <div class="bg-white/10 rounded-xl p-4">
+          <h3 class="text-white font-semibold mb-3">
+            📈 Recent Status History
+          </h3>
+          <div id="statusHistory" class="space-y-2 max-h-40 overflow-y-auto">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
       <!-- Daily Motivation Section -->
       <div class="glass-effect rounded-2xl p-6 animate-fade-in">
         <div class="text-center mb-6">
@@ -510,16 +566,459 @@
         </form>
       </div>
     </div>
+    <!-- Daily Status Modal -->
+    <div
+      id="statusModal"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50"
+    >
+      <div class="glass-effect rounded-2xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold text-white">📊 Daily Work Status</h3>
+          <button
+            onclick="closeStatusModal()"
+            class="text-white hover:text-red-300 text-2xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form id="statusForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-white text-sm font-medium mb-2"
+                >Date</label
+              >
+              <input
+                type="date"
+                id="statusDate"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-white text-sm font-medium mb-2"
+                >Day</label
+              >
+              <input
+                type="text"
+                id="statusDay"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+                readonly
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-white text-sm font-medium mb-2">
+              Hardwork Score <span class="text-gray-300">(out of 10)</span>
+            </label>
+            <input
+              type="number"
+              id="hardworkScore"
+              min="0"
+              max="10"
+              step="0.1"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-white text-sm font-medium mb-2">
+              Health Score <span class="text-gray-300">(out of 15)</span>
+            </label>
+            <input
+              type="number"
+              id="healthScore"
+              min="0"
+              max="15"
+              step="0.1"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-white text-sm font-medium mb-2">
+              School Work Score <span class="text-gray-300">(out of 2.5)</span>
+            </label>
+            <input
+              type="number"
+              id="schoolWorkScore"
+              min="0"
+              max="2.5"
+              step="0.1"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-white text-sm font-medium mb-2">
+              Procrastination Score
+              <span class="text-gray-300">(out of 10)</span>
+            </label>
+            <input
+              type="number"
+              id="procrastinationScore"
+              min="0"
+              max="10"
+              step="0.1"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-white text-sm font-medium mb-2">
+              Dilemma Score <span class="text-gray-300">(out of 7.5)</span>
+            </label>
+            <input
+              type="number"
+              id="dilemmaScore"
+              min="0"
+              max="7.5"
+              step="0.1"
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
+              required
+            />
+          </div>
+
+          <div class="flex space-x-4">
+            <button
+              type="submit"
+              class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-all"
+            >
+              Calculate & Save
+            </button>
+            <button
+              type="button"
+              onclick="closeStatusModal()"
+              class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script>
       // Data Storage using localStorage
       class StudyPlannerApp {
+        // Daily Status Calculation Method
+        calculateDailyStatus(
+          hardwork,
+          health,
+          schoolWork,
+          procrastination,
+          dilemma
+        ) {
+          const totalScore =
+            parseFloat(hardwork) +
+            parseFloat(health) +
+            parseFloat(schoolWork) +
+            parseFloat(procrastination) +
+            parseFloat(dilemma);
+          const averageScore = (totalScore / 45).toFixed(3);
+
+          let remarks = "";
+          let statusClass = "";
+
+          if (totalScore === 45) {
+            remarks = "Satisfied — Winning today!";
+            statusClass = "status-excellent";
+          } else if (totalScore >= 40) {
+            remarks = "No Problem — On track, keep going";
+            statusClass = "status-excellent";
+          } else if (totalScore >= 35) {
+            remarks = "Augh — Needs improvement";
+            statusClass = "status-good";
+          } else if (totalScore >= 31) {
+            remarks = "Please!! — Urgent focus needed";
+            statusClass = "status-average";
+          } else if (totalScore >= 25) {
+            remarks = "Not Satisfied — Reset required";
+            statusClass = "status-poor";
+          } else {
+            remarks = "Get Out — Wake-up call!";
+            statusClass = "status-critical";
+          }
+
+          return {
+            totalScore: totalScore.toFixed(1),
+            averageScore,
+            remarks,
+            statusClass,
+          };
+        }
+
+        // Add Daily Status Method
+        addDailyStatus(
+          date,
+          day,
+          hardwork,
+          health,
+          schoolWork,
+          procrastination,
+          dilemma
+        ) {
+          const calculation = this.calculateDailyStatus(
+            hardwork,
+            health,
+            schoolWork,
+            procrastination,
+            dilemma
+          );
+
+          const statusReport = {
+            date,
+            day,
+            scores: {
+              hardwork: parseFloat(hardwork),
+              health: parseFloat(health),
+              school_work: parseFloat(schoolWork),
+              procrastination: parseFloat(procrastination),
+              dilemma: parseFloat(dilemma),
+            },
+            total_score: parseFloat(calculation.totalScore),
+            average_score: parseFloat(calculation.averageScore),
+            remarks: calculation.remarks,
+            statusClass: calculation.statusClass,
+            timestamp: new Date().toISOString(),
+          };
+
+          // Remove existing entry for the same date if it exists
+          this.dailyStatusReports = this.dailyStatusReports.filter(
+            (report) => report.date !== date
+          );
+
+          // Add new report
+          this.dailyStatusReports.unshift(statusReport);
+
+          // Keep only last 30 days
+          this.dailyStatusReports = this.dailyStatusReports.slice(0, 30);
+
+          localStorage.setItem(
+            "dailyStatusReports",
+            JSON.stringify(this.dailyStatusReports)
+          );
+          this.loadDailyStatus();
+
+          return statusReport;
+        }
+
+        // Load Daily Status Method
+        loadDailyStatus() {
+          const today = new Date().toISOString().split("T")[0];
+          const todayReport = this.dailyStatusReports.find(
+            (report) => report.date === today
+          );
+
+          const todayDisplay = document.getElementById("todayStatusDisplay");
+
+          if (todayReport) {
+            todayDisplay.innerHTML = `
+      <div class="bg-white/10 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-white font-bold text-lg">Today's Status Report</h3>
+          <div class="px-3 py-1 rounded-full ${todayReport.statusClass} text-white text-sm font-medium">
+            ${todayReport.total_score}/45
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div class="text-center">
+            <p class="text-gray-300 text-xs">Hardwork</p>
+            <p class="text-white font-bold">${todayReport.scores.hardwork}/10</p>
+          </div>
+          <div class="text-center">
+            <p class="text-gray-300 text-xs">Health</p>
+            <p class="text-white font-bold">${todayReport.scores.health}/15</p>
+          </div>
+          <div class="text-center">
+            <p class="text-gray-300 text-xs">School Work</p>
+            <p class="text-white font-bold">${todayReport.scores.school_work}/2.5</p>
+          </div>
+          <div class="text-center">
+            <p class="text-gray-300 text-xs">Procrastination</p>
+            <p class="text-white font-bold">${todayReport.scores.procrastination}/10</p>
+          </div>
+          <div class="text-center">
+            <p class="text-gray-300 text-xs">Dilemma</p>
+            <p class="text-white font-bold">${todayReport.scores.dilemma}/7.5</p>
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <div class="mb-2">
+            <span class="text-gray-300 text-sm">Average Score: </span>
+            <span class="text-white font-bold">${todayReport.average_score}</span>
+          </div>
+          <div class="px-4 py-2 rounded-lg ${todayReport.statusClass} text-white font-medium">
+            ${todayReport.remarks}
+          </div>
+        </div>
+      </div>
+    `;
+          } else {
+            todayDisplay.innerHTML = `
+      <div class="bg-white/10 rounded-xl p-6 text-center">
+        <div class="text-gray-300 mb-4">
+          <div class="text-4xl mb-2">📊</div>
+          <p class="text-lg">No status recorded for today</p>
+          <p class="text-sm">Click "Update Status" to track your daily progress</p>
+        </div>
+      </div>
+    `;
+          }
+
+          this.loadStatusHistory();
+        }
+
+        // Load Status History Method
+        loadStatusHistory() {
+          const historyContainer = document.getElementById("statusHistory");
+
+          if (this.dailyStatusReports.length === 0) {
+            historyContainer.innerHTML =
+              '<p class="text-gray-300 text-center py-4">No history available yet</p>';
+            return;
+          }
+
+          historyContainer.innerHTML = this.dailyStatusReports
+            .slice(0, 10) // Show last 10 entries
+            .map(
+              (report) => `
+      <div class="flex items-center justify-between p-3 rounded-lg bg-white/5">
+        <div class="flex items-center space-x-3">
+          <div class="text-center">
+            <p class="text-white text-sm font-medium">${new Date(
+              report.date
+            ).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}</p>
+            <p class="text-gray-300 text-xs">${report.day}</p>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-1 rounded text-xs font-medium ${
+                report.statusClass
+              } text-white">
+                ${report.total_score}/45
+              </span>
+              <span class="text-white text-sm">${report.remarks
+                .split("—")[0]
+                .trim()}</span>
+            </div>
+          </div>
+        </div>
+        <button onclick="app.viewStatusDetails('${
+          report.date
+        }')" class="text-blue-400 hover:text-blue-300 text-xs">
+          View
+        </button>
+      </div>
+    `
+            )
+            .join("");
+        }
+
+        // View Status Details Method
+        viewStatusDetails(date) {
+          const report = this.dailyStatusReports.find((r) => r.date === date);
+          if (report) {
+            const detailsText = `
+Date: ${report.date} (${report.day})
+Scores:
+- Hardwork: ${report.scores.hardwork}/10
+- Health: ${report.scores.health}/15
+- School Work: ${report.scores.school_work}/2.5
+- Procrastination: ${report.scores.procrastination}/10
+- Dilemma: ${report.scores.dilemma}/7.5
+
+Total Score: ${report.total_score}/45
+Average Score: ${report.average_score}
+Remarks: ${report.remarks}
+
+Do you want to delete this status entry?
+    `;
+            if (confirm(detailsText)) {
+              this.deleteDailyStatus(date);
+            }
+          }
+        }
+
+        // Delete Daily Status Method
+        deleteDailyStatus(date) {
+          this.dailyStatusReports = this.dailyStatusReports.filter(
+            (report) => report.date !== date
+          );
+          localStorage.setItem(
+            "dailyStatusReports",
+            JSON.stringify(this.dailyStatusReports)
+          );
+          this.loadDailyStatus();
+          this.showNotification("Status entry deleted! 🗑️");
+        }
+
+        // Open Status Modal Method
+        openStatusModal() {
+          const today = new Date();
+          const dateStr = today.toISOString().split("T")[0];
+          const dayStr = today.toLocaleDateString("en-US", { weekday: "long" });
+
+          document.getElementById("statusDate").value = dateStr;
+          document.getElementById("statusDay").value = dayStr;
+
+          // ADD THIS: Update day when date changes
+          document
+            .getElementById("statusDate")
+            .addEventListener("change", function () {
+              const selectedDate = new Date(this.value);
+              const dayName = selectedDate.toLocaleDateString("en-US", {
+                weekday: "long",
+              });
+              document.getElementById("statusDay").value = dayName;
+            });
+
+          // Pre-fill with today's data if it exists
+          const todayReport = this.dailyStatusReports.find(
+            (report) => report.date === dateStr
+          );
+          if (todayReport) {
+            document.getElementById("hardworkScore").value =
+              todayReport.scores.hardwork;
+            document.getElementById("healthScore").value =
+              todayReport.scores.health;
+            document.getElementById("schoolWorkScore").value =
+              todayReport.scores.school_work;
+            document.getElementById("procrastinationScore").value =
+              todayReport.scores.procrastination;
+            document.getElementById("dilemmaScore").value =
+              todayReport.scores.dilemma;
+          }
+
+          document.getElementById("statusModal").classList.remove("hidden");
+          document.getElementById("statusModal").classList.add("flex");
+        }
+
+        // Close Status Modal Method
+        closeStatusModal() {
+          document.getElementById("statusModal").classList.add("hidden");
+          document.getElementById("statusModal").classList.remove("flex");
+          document.getElementById("statusForm").reset();
+        }
         constructor() {
           this.currentMode = "warrior";
           this.studySessions =
             JSON.parse(localStorage.getItem("studySessions")) || [];
           this.savedQuotes =
             JSON.parse(localStorage.getItem("savedQuotes")) || [];
+          // Add this line in the constructor after this.savedQuotes
+          this.dailyStatusReports =
+            JSON.parse(localStorage.getItem("dailyStatusReports")) || [];
 
           // Timer properties
           this.timerInterval = null;
@@ -552,6 +1051,10 @@
               { text: "तत्त्वमसि - You are That", author: "Upanishads" },
             ],
             warrior: [
+              {
+                text: "The COMEBACK is greater than that of Setback.",
+                author: "Anonymous",
+              },
               {
                 text: "Success is not about motivation, it's about consistency.",
                 author: "Anonymous",
@@ -604,6 +1107,8 @@
           this.updateDateTime();
           this.generateNewQuote();
           this.loadStudySessions();
+          // Add this line to your init() method after this.loadSavedQuotes();
+          this.loadDailyStatus();
           this.loadSavedQuotes();
           this.setupEventListeners();
           this.updateTimerDisplay();
@@ -676,6 +1181,9 @@
             mode: this.currentMode,
             timestamp: new Date().toISOString(),
           };
+          // Add this line in the constructor after this.savedQuotes
+          this.dailyStatusReports =
+            JSON.parse(localStorage.getItem("dailyStatusReports")) || [];
 
           // Check if quote already exists
           const exists = this.savedQuotes.some((q) => q.text === quoteText);
@@ -920,6 +1428,100 @@
               this.closeAddSessionModal();
               this.showNotification("Study session added successfully! 📚");
             });
+
+          // ADD THIS: Status Form Event Listener
+          document
+            .getElementById("statusForm")
+            .addEventListener("submit", (e) => {
+              e.preventDefault();
+
+              const date = document.getElementById("statusDate").value;
+              const day = document.getElementById("statusDay").value;
+              const hardwork = document.getElementById("hardworkScore").value;
+              const health = document.getElementById("healthScore").value;
+              const schoolWork =
+                document.getElementById("schoolWorkScore").value;
+              const procrastination = document.getElementById(
+                "procrastinationScore"
+              ).value;
+              const dilemma = document.getElementById("dilemmaScore").value;
+
+              // Validate inputs
+              if (
+                !date ||
+                !hardwork ||
+                !health ||
+                !schoolWork ||
+                !procrastination ||
+                !dilemma
+              ) {
+                this.showNotification("Please fill all fields! ⚠️", "error");
+                return;
+              }
+
+              // Add the status report
+              const report = this.addDailyStatus(
+                date,
+                day,
+                hardwork,
+                health,
+                schoolWork,
+                procrastination,
+                dilemma
+              );
+
+              this.closeStatusModal();
+              this.showNotification(
+                `Status saved! Total Score: ${
+                  report.total_score
+                }/45 - ${report.remarks.split("—")[0].trim()}! 📊`
+              );
+            });
+        }
+
+        downloadStatusExcel() {
+          // Get all status reports from localStorage
+          const data =
+            JSON.parse(localStorage.getItem("dailyStatusReports")) || [];
+          if (data.length === 0) {
+            alert("No status data to export!");
+            return;
+          }
+
+          // Prepare data for Excel with S.NO. and correct headers
+          const rows = data.map((report, idx) => ({
+            "S.NO.": idx + 1,
+            Date: report.date,
+            Day: report.day,
+            "Hardwork (10)": report.scores.hardwork,
+            "Health (15)": report.scores.health,
+            "School Work (2.5)": report.scores.school_work,
+            "Procastination (10)": report.scores.procrastination,
+            "Dilemma (7.5)": report.scores.dilemma,
+            "Average Score": report.average_score,
+            Remarks: report.remarks,
+          }));
+
+          // Create worksheet and workbook
+          const ws = XLSX.utils.json_to_sheet(rows, {
+            header: [
+              "S.NO.",
+              "Date",
+              "Day",
+              "Hardwork (10)",
+              "Health (15)",
+              "School Work (2.5)",
+              "Procastination (10)",
+              "Dilemma (7.5)",
+              "Average Score",
+              "Remarks",
+            ],
+          });
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Daily Status");
+
+          // Download file
+          XLSX.writeFile(wb, "DailyStatus.xlsx");
         }
 
         openAddSessionModal() {
@@ -1227,6 +1829,15 @@
         }
       }
 
+      // Global functions for status modal
+      function openStatusModal() {
+        app.openStatusModal();
+      }
+
+      function closeStatusModal() {
+        app.closeStatusModal();
+      }
+
       // On load, set theme from localStorage
       document.addEventListener("DOMContentLoaded", function () {
         const savedTheme = localStorage.getItem("theme");
@@ -1246,6 +1857,20 @@
           warriorBtn.classList.add("ring-2", "ring-white");
         }
       });
+
+      // Add these functions after the existing global functions and before "// Initialize app"
+
+      // Global functions for status modal
+      function openStatusModal() {
+        app.openStatusModal();
+      }
+
+      function closeStatusModal() {
+        app.closeStatusModal();
+      }
+      function downloadStatusExcel() {
+        app.downloadStatusExcel();
+      }
 
       // Initialize app
       const app = new StudyPlannerApp();
